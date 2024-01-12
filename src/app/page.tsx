@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { spotifyApi } from "~/spotify"
 import Link from "next/link"
 
-export default async ({ searchParams }: { searchParams: { time_range: "short_term" | "medium_term" | "long_term" } }) => {
+export default async function HomePage ({ searchParams }: { searchParams: { time_range: "short_term" | "medium_term" | "long_term" } }) {
   if (!searchParams.time_range) redirect("/?time_range=short_term")
 
   const token = cookies().get("session")?.value
