@@ -1,37 +1,83 @@
-import Link from "next/link";
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { spotifyApi } from "~/spotify"
+import Link from "next/link"
 
-export default function HomePage() {
+export default async ({ searchParams }: { searchParams: { time_range: "short_term" | "medium_term" | "long_term" } }) => {
+  if (!searchParams.time_range) redirect("/?time_range=short_term")
+
+  const token = cookies().get("session")?.value
+  if (!token) redirect("/api/auth")
+
+  spotifyApi.setAccessToken(token)
+
+  const topArtists = await spotifyApi.getMyTopArtists({ time_range: searchParams.time_range })
+  const topSongs = await spotifyApi.getMyTopTracks({ time_range: searchParams.time_range })
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-          Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
+    <main className="flex flex-col items-center justify-center min-h-screen text-[#f8f8f8] bg-black">
+
+      <div className="my-[5vh] lg:my-[10vh] flex flex-col items-center justify-center space-y-8 sm:space-y-10">
+        <h1 className="font-bold tracking-tighter text-4xl sm:text-7xl space-x-6">
+          <span>Spotify</span>
+          <span className="bg-gradient-to-r from-indigo-400 to-red-600 px-3 py-1 sm:px-4 sm:py-2 rounded-md">Wrapped</span>
         </h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/usage/first-steps"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">First Steps →</h3>
-            <div className="text-lg">
-              Just the basics - Everything you need to know to set up your
-              database and authentication.
-            </div>
-          </Link>
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/introduction"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">Documentation →</h3>
-            <div className="text-lg">
-              Learn more about Create T3 App, the libraries it uses, and how to
-              deploy it.
-            </div>
-          </Link>
+        <div className="text-neutral-400 text-lg">
+          <Link href={"?time_range=short_term"} className={"hover:underline " + (searchParams.time_range == "short_term" ? "text-neutral-300 underline" : "")}>4 weeks</Link>{" • "}
+          <Link href={"?time_range=medium_term"} className={"hover:underline " + (searchParams.time_range == "medium_term" ? "text-neutral-300 underline" : "")}>6 months</Link>{" • "}
+          <Link href={"?time_range=long_term"} className={"hover:underline " + (searchParams.time_range == "long_term" ? "text-neutral-300 underline" : "")}>All time</Link>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2">
+
+        <div className="my-[5vh] lg:my-[10vh] flex flex-col items-center justify-center space-y-4 sm:space-y-6">
+          <h2 className="font-bold tracking-tighter text-3xl sm:text-5xl">Top Songs</h2>
+          <div className="my-4 p-8 flex flex-col gap-8 min-w-[350px] max-w-[414px]">{
+            topSongs.body.items.map(song => (
+              <div className="flex gap-4" key={song.id}>
+                <img src={song.album.images[0]?.url} alt={song.name} className="w-10 h-10 rounded" />
+                <div className="flex flex-col justify-around">
+                  <strong className="leading-none line-clamp-1">{song.name}</strong>
+                  <p className="text-neutral-400 leading-none line-clamp-1">{song.artists.map(artist => artist.name).join(", ")}</p>
+                </div>
+              </div>
+            ))
+          }</div>
+        </div>
+
+        <div className="my-[5vh] lg:my-[10vh] flex flex-col items-center justify-center space-y-4 sm:space-y-6">
+          <h2 className="font-bold tracking-tighter text-3xl sm:text-5xl">Top Artists</h2>
+          <div className="my-4 p-8 flex flex-col gap-8 min-w-[350px] max-w-[414px]">{
+            topArtists.body.items.map(artist => (
+              <div className="flex gap-4" key={artist.id}>
+                <img src={artist.images[0]?.url} alt={artist.name} className="w-10 h-10 rounded" />
+                <div className="flex flex-col justify-around">
+                  <strong className="leading-none line-clamp-1">{artist.name}</strong>
+                  <p className="text-neutral-400 leading-none line-clamp-1">{artist.genres[0] ?? "unknown genre"}</p>
+                </div>
+              </div>
+            ))
+          }</div>
+        </div>
+
+        {/* <div className="my-[5vh] lg:my-[10vh] flex flex-col items-center justify-center space-y-4 sm:space-y-6">
+          <h2 className="font-bold tracking-tighter text-3xl sm:text-5xl">Top Genres</h2>
+          <div className="my-4 p-8 flex flex-col gap-8 min-w-[350px] max-w-[414px]">{
+            topArtists.body.items.map(artist => (
+              <div className="flex gap-4" key={artist.id}>
+                <img src={artist.images[0]?.url} alt={artist.name} className="w-10 h-10 rounded" />
+                <div className="flex flex-col justify-around">
+                  <strong className="leading-none line-clamp-1">{artist.name}</strong>
+                  <p className="text-neutral-400 leading-none line-clamp-1">{artist.genres[0] ?? "unknown genre"}</p>
+                </div>
+              </div>
+            ))
+          }</div>
+        </div> */}
+
+      </div>
+
     </main>
-  );
+  )
 }
