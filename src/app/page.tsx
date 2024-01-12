@@ -20,7 +20,7 @@ export default async function HomePage ({
   const topArtists = await spotifyApi.getMyTopArtists({ time_range: searchParams.time_range })
   const topSongs = await spotifyApi.getMyTopTracks({ time_range: searchParams.time_range })
 
-  const genreCount: { [genre: string]: { count: number, index: number } } = {}
+  const genreCount: Record<string, { count: number, index: number }> = {}
 
   topArtists.body.items.forEach((artist, index) => {
     artist.genres.forEach((genre) => {
